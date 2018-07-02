@@ -7,10 +7,12 @@ import com.google.common.io.BaseEncoding;
 import com.google.common.net.HostAndPort;
 import com.orbitz.consul.cache.TimeoutInterceptor;
 import com.orbitz.consul.config.ClientConfig;
+import com.orbitz.consul.config.PoolConfig;
 import com.orbitz.consul.monitoring.ClientEventCallback;
 import com.orbitz.consul.util.Jackson;
 import com.orbitz.consul.util.bookend.ConsulBookend;
 import com.orbitz.consul.util.bookend.ConsulBookendInterceptor;
+import okhttp3.ConnectionPool;
 import okhttp3.Dispatcher;
 import okhttp3.HttpUrl;
 import okhttp3.Interceptor;
@@ -674,6 +676,14 @@ public class Consul {
             }
 
             builder.addInterceptor(new TimeoutInterceptor(clientConfig.getCacheConfig()));
+
+            final PoolConfig poolConfig = clientConfig.getPoolConfig();
+            final ConnectionPool connectionPool = new ConnectionPool(
+                    poolConfig.getMaxIdleConnections(),
+                    poolConfig.getKeepAliveDuration().toMillis(),
+                    TimeUnit.MILLISECONDS
+            );
+            builder.connectionPool(connectionPool);
 
             Dispatcher dispatcher = new Dispatcher(executorService);
             dispatcher.setMaxRequests(Integer.MAX_VALUE);
